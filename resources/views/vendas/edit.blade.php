@@ -1,0 +1,200 @@
+@extends('layouts.app')
+
+@section('content')
+
+<div class="container mt-4">
+    <h2>Editar Venda</h2>
+
+    <form method="POST" action="{{ route('vendas.update', $venda) }}" onsubmit="prepareProdutos(event)">
+        @csrf
+        @method('PUT')
+
+        <div class="mb-3">
+            <label for="funcionario_id" class="form-label">Funcionário</label>
+            <select name="funcionario_id" id="funcionario_id" class="form-control" required>
+                @foreach(\App\Models\Funcionario::all() as $f)
+                    <option value="{{ $f->id }}" {{ $venda->funcionario_id == $f->id ? 'selected' : '' }}>{{ $f->nome }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <h4>Produtos</h4>
+        <div id="produtos-container">
+            @php
+                $produtosVenda = json_decode($venda->produtos) ?? [];
+                $produtos = \App\Models\Produto::all();
+            @endphp
+            @forelse($produtosVenda as $item)
+                <div class="produto-row mb-3 p-3 border">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Produto</label>
+                            <select class="form-control produto-select" required>
+                                @foreach($produtos as $p)
+                                    <option value="{{ $p->id }}" data-preco="{{ $p->preco }}" {{ $p->id == $item->id ? 'selected' : '' }}>{{ $p->nome }} (R$ {{ number_format($p->preco, 2, ',', '.') }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" class="form-control quantidade-input" value="{{ $item->quantidade }}" min="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Subtotal</label>
+                            <input type="text" class="form-control subtotal-display" value="R$ 0,00" disabled>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removerProduto(this)">Remover</button>
+                </div>
+            @empty
+                <div class="produto-row mb-3 p-3 border">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Produto</label>
+                            <select class="form-control produto-select" required>
+                                <option value="">Selecione um produto</option>
+                                @foreach($produtos as $p)
+                                    <option value="{{ $p->id }}" data-preco="{{ $p->preco }}">{{ $p->nome }} (R$ {{ number_format($p->preco, 2, ',', '.') }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Quantidade</label>
+                            <input type="number" class="form-control quantidade-input" value="1" min="1" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Subtotal</label>
+                            <input type="text" class="form-control subtotal-display" value="R$ 0,00" disabled>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removerProduto(this)">Remover</button>
+                </div>
+            @endforelse
+        </div>
+
+        <button type="button" class="btn btn-secondary mb-3" onclick="adicionarProduto()">+ Adicionar Produto</button>
+
+        <div class="alert alert-info">
+            <strong>Total: </strong>
+            <span id="total-display">R$ 0,00</span>
+        </div>
+
+        <input type="hidden" name="produtos" id="produtos-json">
+
+        <button type="submit" class="btn btn-primary">Atualizar Venda</button>
+    </form>
+</div>
+
+@if ($errors->any())
+    <div class="alert alert-danger mt-3">
+        @foreach ($errors->all() as $error)
+            <div>{{ $error }}</div>
+        @endforeach
+    </div>
+@endif
+
+<script>
+function formatarMoeda(valor) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+}
+
+function adicionarProduto() {
+    const container = document.getElementById('produtos-container');
+    const produtos = @json($produtos);
+    
+    let optionsHtml = '<option value="">Selecione um produto</option>';
+    produtos.forEach(p => {
+        optionsHtml += `<option value="${p.id}" data-preco="${p.preco}">${p.nome} (R$ ${(p.preco).toLocaleString('pt-BR', {minimumFractionDigits: 2})})</option>`;
+    });
+
+    const html = `
+        <div class="produto-row mb-3 p-3 border">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Produto</label>
+                    <select class="form-control produto-select" required>
+                        ${optionsHtml}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Quantidade</label>
+                    <input type="number" class="form-control quantidade-input" value="1" min="1" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Subtotal</label>
+                    <input type="text" class="form-control subtotal-display" value="R$ 0,00" disabled>
+                </div>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removerProduto(this)">Remover</button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+    attachEventListeners();
+}
+
+function removerProduto(btn) {
+    btn.closest('.produto-row').remove();
+    calcularTotal();
+}
+
+function attachEventListeners() {
+    const selects = document.querySelectorAll('.produto-select');
+    const inputs = document.querySelectorAll('.quantidade-input');
+
+    selects.forEach(select => {
+        select.addEventListener('change', calcularTotal);
+    });
+
+    inputs.forEach(input => {
+        input.addEventListener('input', calcularTotal);
+    });
+}
+
+function calcularTotal() {
+    let total = 0;
+    document.querySelectorAll('.produto-row').forEach(row => {
+        const select = row.querySelector('.produto-select');
+        const quantidade = parseInt(row.querySelector('.quantidade-input').value) || 0;
+        const preco = parseFloat(select.options[select.selectedIndex].dataset.preco) || 0;
+        const subtotal = preco * quantidade;
+
+        row.querySelector('.subtotal-display').value = formatarMoeda(subtotal);
+        total += subtotal;
+    });
+
+    document.getElementById('total-display').textContent = formatarMoeda(total);
+}
+
+function prepareProdutos(event) {
+    const produtos = [];
+    let valido = true;
+
+    document.querySelectorAll('.produto-row').forEach(row => {
+        const id = row.querySelector('.produto-select').value;
+        const quantidade = parseInt(row.querySelector('.quantidade-input').value);
+
+        if (!id || !quantidade) {
+            valido = false;
+            return;
+        }
+
+        produtos.push({ id: parseInt(id), quantidade: quantidade });
+    });
+
+    if (!valido || produtos.length === 0) {
+        event.preventDefault();
+        alert('Por favor, preencha todos os produtos com quantidade válida');
+        return;
+    }
+
+    document.getElementById('produtos-json').value = JSON.stringify(produtos);
+}
+
+// Inicializar event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    attachEventListeners();
+    calcularTotal();
+});
+</script>
+
+@endsection
