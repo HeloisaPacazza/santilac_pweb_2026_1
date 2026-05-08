@@ -18,35 +18,43 @@
             </select>
         </div>
 
+        <div class="mb-3">
+            <label for="data_venda" class="form-label">Data da Venda</label>
+            <input type="datetime-local" class="form-control" id="data_venda" name="data_venda" value="{{ optional($venda->data_venda)->format('Y-m-d\TH:i') }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="observacoes" class="form-label">Observações</label>
+            <textarea class="form-control" id="observacoes" name="observacoes" rows="3">{{ $venda->observacoes }}</textarea>
+        </div>
+
         <h4>Produtos</h4>
         <div id="produtos-container">
-            @php
-                $produtosVenda = json_decode($venda->produtos) ?? [];
-                $produtos = \App\Models\Produto::all();
-            @endphp
-            @forelse($produtosVenda as $item)
-                <div class="produto-row mb-3 p-3 border">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <label class="form-label">Produto</label>
-                            <select class="form-control produto-select" required>
-                                @foreach($produtos as $p)
-                                    <option value="{{ $p->id }}" data-preco="{{ $p->preco }}" {{ $p->id == $item->id ? 'selected' : '' }}>{{ $p->nome }} (R$ {{ number_format($p->preco, 2, ',', '.') }})</option>
-                                @endforeach
-                            </select>
+            @if($venda->itens->isNotEmpty())
+                @foreach($venda->itens as $item)
+                    <div class="produto-row mb-3 p-3 border">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Produto</label>
+                                <select class="form-control produto-select" required>
+                                    @foreach($produtos as $p)
+                                        <option value="{{ $p->id }}" data-preco="{{ $p->preco }}" {{ $p->id == $item->produto_id ? 'selected' : '' }}>{{ $p->nome }} (R$ {{ number_format($p->preco, 2, ',', '.') }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Quantidade</label>
+                                <input type="number" class="form-control quantidade-input" value="{{ $item->quantidade }}" min="1" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Subtotal</label>
+                                <input type="text" class="form-control subtotal-display" value="R$ 0,00" disabled>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Quantidade</label>
-                            <input type="number" class="form-control quantidade-input" value="{{ $item->quantidade }}" min="1" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Subtotal</label>
-                            <input type="text" class="form-control subtotal-display" value="R$ 0,00" disabled>
-                        </div>
+                        <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removerProduto(this)">Remover</button>
                     </div>
-                    <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removerProduto(this)">Remover</button>
-                </div>
-            @empty
+                @endforeach
+            @else
                 <div class="produto-row mb-3 p-3 border">
                     <div class="row">
                         <div class="col-md-6">
@@ -69,7 +77,7 @@
                     </div>
                     <button type="button" class="btn btn-danger btn-sm mt-2" onclick="removerProduto(this)">Remover</button>
                 </div>
-            @endforelse
+            @endif
         </div>
 
         <button type="button" class="btn btn-secondary mb-3" onclick="adicionarProduto()">+ Adicionar Produto</button>

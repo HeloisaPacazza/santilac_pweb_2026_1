@@ -18,6 +18,16 @@
             </select>
         </div>
 
+        <div class="mb-3">
+            <label for="data_venda" class="form-label">Data da Venda</label>
+            <input type="datetime-local" class="form-control" id="data_venda" name="data_venda">
+        </div>
+
+        <div class="mb-3">
+            <label for="observacoes" class="form-label">Observações</label>
+            <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+        </div>
+
         <h4>Produtos</h4>
         <div id="produtos-container">
             <div class="produto-row mb-3 p-3 border">

@@ -28,6 +28,7 @@
     <table class="table table-striped">
         <thead>
             <tr>
+                <th>Imagem</th>
                 <th>Nome</th>
                 <th>Preço</th>
                 <th>Estoque</th>
@@ -38,6 +39,13 @@
         <tbody>
             @forelse($produtos as $p)
             <tr>
+                <td>
+                    @if($p->imagem)
+                        <img src="{{ asset('imagens/' . $p->imagem) }}" alt="Imagem" width="50">
+                    @else
+                        <img src="{{ asset('imagens/sem_foto.jpg') }}" alt="Sem foto" width="50">
+                    @endif
+                </td>
                 <td>{{ $p->nome }}</td>
                 <td>R$ {{ number_format($p->preco, 2, ',', '.') }}</td>
                 <td>{{ $p->estoque }}</td>
@@ -53,7 +61,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center text-muted">Nenhum produto encontrado.</td>
+                <td colspan="6" class="text-center text-muted">Nenhum produto encontrado.</td>
             </tr>
             @endforelse
         </tbody>

@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <h2>Editar Produto</h2>
 
-    <form method="POST" action="{{ route('produtos.update', $produto) }}">
+    <form method="POST" action="{{ route('produtos.update', $produto) }}" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -42,6 +42,19 @@
             <label for="peso" class="form-label">Peso (g)</label>
             <input type="number" step="0.001" class="form-control" id="peso" name="peso" value="{{ $produto->peso }}" required>
             @error('peso')
+                <span class="text-danger small">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="mb-3">
+            <label for="imagem" class="form-label">Imagem</label>
+            @if($produto->imagem)
+                <div class="mb-2">
+                    <img src="{{ asset('imagens/' . $produto->imagem) }}" alt="Imagem atual" width="100">
+                </div>
+            @endif
+            <input type="file" class="form-control" id="imagem" name="imagem" accept="image/*">
+            @error('imagem')
                 <span class="text-danger small">{{ $message }}</span>
             @enderror
         </div>

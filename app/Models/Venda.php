@@ -9,16 +9,26 @@ class Venda extends Model
 {
     protected $fillable = [
         'funcionario_id',
-        'produtos',
         'total',
+        'data_venda',
+        'observacoes',
     ];
 
     protected $casts = [
-        'produtos' => 'json',
     ];
 
     public function funcionario()
     {
-        return $this->belongsTo(Funcionario::class, 'funcionario_id');
+        return $this->belongsTo(Funcionario::class, 'funcionario_id')->withDefault(['nome' => 'Funcionário excluído']);
     }
+    // Venda.php
+    public function itens()
+    {
+        return $this->hasMany(Itens_venda::class);
+    }
+    // Venda.php
+public function entrega()
+{
+    return $this->hasOne(Entrega::class);
+}
 }

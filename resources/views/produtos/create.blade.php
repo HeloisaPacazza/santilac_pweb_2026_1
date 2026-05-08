@@ -5,7 +5,7 @@
 <div class="container mt-4">
     <h2>Novo Produto</h2>
 
-    <form method="POST" action="{{ route('produtos.store') }}">
+    <form method="POST" action="{{ route('produtos.store') }}" enctype="multipart/form-data">
         @csrf
 
         <div class="mb-3">
@@ -41,6 +41,14 @@
             <label for="peso" class="form-label">Peso (g)</label>
             <input type="number" step="0.001" class="form-control" id="peso" name="peso" placeholder="0" required>
             @error('peso')
+                <span class="text-danger small">{{ $message }}</span>
+            @enderror
+        </div>
+
+        <div class="mb-3">
+            <label for="imagem" class="form-label">Imagem</label>
+            <input type="file" class="form-control" id="imagem" name="imagem" accept="image/*">
+            @error('imagem')
                 <span class="text-danger small">{{ $message }}</span>
             @enderror
         </div>

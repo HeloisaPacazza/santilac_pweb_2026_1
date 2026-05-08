@@ -10,10 +10,14 @@
     <div class="container">
         <a class="navbar-brand" href="#">Santilac</a>
 
-        <div>
+        <div class="d-flex gap-2 flex-wrap">
             <a class="btn btn-light" href="/produtos">Produtos</a>
             <a class="btn btn-light" href="/funcionarios">Funcionários</a>
             <a class="btn btn-light" href="/vendas">Vendas</a>
+            <a class="btn btn-light" href="/entregas">Entregas</a>
+            <a class="btn btn-light" href="{{ route('pdf.vendas') }}">Relatório de Vendas</a>
+            <a class="btn btn-light" href="{{ route('pdf.entregas') }}">Relatório de Entregas</a>
+            <a class="btn btn-light" href="{{ route('graficos.vendas') }}">Gráficos</a>
         </div>
     </div>
 </nav>

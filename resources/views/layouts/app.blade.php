@@ -17,6 +17,8 @@
             <a href="/produtos" class="btn btn-outline-light">Produtos</a>
             <a href="/funcionarios" class="btn btn-outline-light">Funcionários</a>
             <a href="/vendas" class="btn btn-outline-light">Vendas</a>
+            <a href="/entregas" class="btn btn-outline-light">Entregas</a>
+            <a href="/graficos-vendas" class="btn btn-outline-light"> Gráficos</a>
         </div>
     </div>
 </nav>

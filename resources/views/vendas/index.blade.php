@@ -21,6 +21,7 @@
         </div>
         <div class="col-md-4 text-end">
             <a href="{{ route('vendas.create') }}" class="btn btn-success">+ Nova Venda</a>
+            <a href="{{ route('pdf.vendas') }}" class="btn btn-danger">Relatórios de Vendas</a>
         </div>
     </div>
 
@@ -34,24 +35,20 @@
                 <th>Funcionário</th>
                 <th>Produtos</th>
                 <th>Total</th>
-                <th>Data</th>
+                <th>Data da Venda</th>
+                <th>Data de Criação</th>
                 <th>Ações</th>
             </tr>
         </thead>
         <tbody>
             @forelse($vendas as $v)
             <tr>
-                <td>{{ $v->funcionario->nome }}</td>
+                <td>{{ $v->funcionario->nome ?? 'Funcionário excluído' }}</td>
                 <td>
-                    @if($v->produtos)
+                    @if($v->itens->count() > 0)
                         <ul class="mb-0">
-                            @foreach(json_decode($v->produtos) as $item)
-                                @php
-                                    $produto = \App\Models\Produto::find($item->id);
-                                @endphp
-                                @if($produto)
-                                    <li>{{ $produto->nome }} x{{ $item->quantidade }}</li>
-                                @endif
+                            @foreach($v->itens as $item)
+                                <li>{{ $item->produto->nome ?? 'Produto excluído' }} x{{ $item->quantidade }}</li>
                             @endforeach
                         </ul>
                     @else
@@ -59,6 +56,7 @@
                     @endif
                 </td>
                 <td><strong>R$ {{ number_format($v->total, 2, ',', '.') }}</strong></td>
+                <td>{{ $v->data_venda ? \Carbon\Carbon::parse($v->data_venda)->format('d/m/Y H:i') : '-' }}</td>
                 <td>{{ $v->created_at->format('d/m/Y H:i') }}</td>
                 <td>
                     <a href="{{ route('vendas.edit', $v) }}" class="btn btn-sm btn-primary">Editar</a>
@@ -72,7 +70,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center text-muted">Nenhuma venda encontrada.</td>
+                <td colspan="6" class="text-center text-muted">Nenhuma venda encontrada.</td>
             </tr>
             @endforelse
         </tbody>

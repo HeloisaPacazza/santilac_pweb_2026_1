@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\Venda;
 use App\Models\Produto;
 use App\Models\Funcionario;
+use App\Models\Itens_venda;
 
 class VendaController extends Controller
 {
@@ -13,7 +14,7 @@ class VendaController extends Controller
      */
     public function index()
     {
-        $vendas = Venda::with('funcionario')->get();
+        $vendas = Venda::with('funcionario', 'itens.produto')->get();
         $tipo = 'funcionario';
         $valor = '';
         return view('vendas.index', compact('vendas', 'tipo', 'valor'));
@@ -23,13 +24,13 @@ class VendaController extends Controller
     {
         if (!empty($request->valor) && !empty($request->tipo)) {
             if ($request->tipo === 'funcionario') {
-                $vendas = Venda::with('funcionario')->whereHas('funcionario', function ($query) use ($request) { $query->where('nome', 'like', '%' . $request->valor . '%');
+                $vendas = Venda::with('funcionario', 'itens.produto')->whereHas('funcionario', function ($query) use ($request) { $query->where('nome', 'like', '%' . $request->valor . '%');
                 })->get();
             } else {
-                $vendas = Venda::with('funcionario')->where($request->tipo, 'like', '%' . $request->valor . '%')->get();
+                $vendas = Venda::with('funcionario', 'itens.produto')->where($request->tipo, 'like', '%' . $request->valor . '%')->get();
             }
         } else {
-            $vendas = Venda::with('funcionario')->get();
+            $vendas = Venda::with('funcionario', 'itens.produto')->get();
         }
 
         $tipo = $request->input('tipo', 'funcionario');
@@ -56,6 +57,8 @@ class VendaController extends Controller
         $request->validate([
             'funcionario_id' => 'required',
             'produtos' => 'required|json',
+            'data_venda' => 'nullable|date',
+            'observacoes' => 'nullable|string',
         ]);
 
         $produtos = json_decode($request->produtos, true);
@@ -69,11 +72,26 @@ class VendaController extends Controller
             }
         }
 
-        Venda::create([
+        $venda = Venda::create([
             'funcionario_id' => $request->funcionario_id,
-            'produtos' => json_encode($produtos),
             'total' => $total,
+            'data_venda' => $request->data_venda,
+            'observacoes' => $request->observacoes,
         ]);
+
+        // Criar itens da venda
+        foreach ($produtos as $item) {
+            $produto = Produto::find($item['id']);
+            if ($produto) {
+                Itens_venda::create([
+                    'venda_id' => $venda->id,
+                    'produto_id' => $item['id'],
+                    'quantidade' => $item['quantidade'],
+                    'preco_unitario' => $produto->preco,
+                    'subtotal' => $produto->preco * $item['quantidade'],
+                ]);
+            }
+        }
 
         return redirect()->route('vendas.index')
             ->with('success', 'Venda criada com sucesso!');
@@ -92,8 +110,10 @@ class VendaController extends Controller
      */
     public function edit(string $id)
     {
-        $venda = Venda::find($id);
-        return view('vendas.edit', compact('venda'));
+        $venda = Venda::with('itens.produto')->findOrFail($id);
+        $produtos = Produto::all();
+
+        return view('vendas.edit', compact('venda', 'produtos'));
     }
 
     /**
@@ -104,13 +124,14 @@ class VendaController extends Controller
         $request->validate([
             'funcionario_id' => 'required',
             'produtos' => 'required|json',
+            'data_venda' => 'nullable|date',
+            'observacoes' => 'nullable|string',
         ]);
 
-        $venda = Venda::find($id);
+        $venda = Venda::findOrFail($id);
         $produtos = json_decode($request->produtos, true);
         $total = 0;
 
-        // Calcular total
         foreach ($produtos as $item) {
             $produto = Produto::find($item['id']);
             if ($produto) {
@@ -120,9 +141,25 @@ class VendaController extends Controller
 
         $venda->update([
             'funcionario_id' => $request->funcionario_id,
-            'produtos' => json_encode($produtos),
             'total' => $total,
+            'data_venda' => $request->data_venda,
+            'observacoes' => $request->observacoes,
         ]);
+
+        Itens_venda::where('venda_id', $venda->id)->delete();
+
+        foreach ($produtos as $item) {
+            $produto = Produto::find($item['id']);
+            if ($produto) {
+                Itens_venda::create([
+                    'venda_id' => $venda->id,
+                    'produto_id' => $item['id'],
+                    'quantidade' => $item['quantidade'],
+                    'preco_unitario' => $produto->preco,
+                    'subtotal' => $produto->preco * $item['quantidade'],
+                ]);
+            }
+        }
 
         return redirect()->route('vendas.index')
             ->with('success', 'Venda atualizada com sucesso!');
@@ -139,4 +176,12 @@ class VendaController extends Controller
         ->with('success', 'Venda excluída com sucesso!');
     }
     
+    public function relatorio()
+    {
+        $dados = Venda::with('cliente')->get();
+
+        $pdf = PDF::loadView('relatorios.vendas', compact('dados'));
+
+        return $pdf->download('relatorio.pdf');
+    }
 }

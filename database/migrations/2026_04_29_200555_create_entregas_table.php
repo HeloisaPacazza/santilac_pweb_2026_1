@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('produtos', function (Blueprint $table) {
-            $table->decimal('peso', 10, 3)->default(0)->after('estoque');
+        Schema::create('entregas', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('venda_id')->constrained()->cascadeOnDelete();
+            $table->string('endereco');
+            $table->dateTime('data_entrega');
+            $table->timestamps();
         });
     }
 
@@ -21,8 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('produtos', function (Blueprint $table) {
-            $table->dropColumn('peso');
-        });
+        Schema::dropIfExists('entregas');
     }
 };
